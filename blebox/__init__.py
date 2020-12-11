@@ -17,9 +17,11 @@
 
 from .device import *
 from .service import *
+from .discovery import *
 
 
 __all__ = (
     device.__all__,
-    service.__all__
+    service.__all__,
+    discovery.__all__
 )
