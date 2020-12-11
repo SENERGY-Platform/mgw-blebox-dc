@@ -43,13 +43,13 @@ class Conf:
     class Api:
         air_sensor_state = None
         air_sensor_device = None
-        delay = 300
+        delay = 60
 
     @simple_env_var.section
     class Discovery:
         remote_host = None
         device_id_prefix = None
-        delay = 30
+        delay = 120
         timeout = 5
 
     @simple_env_var.section
