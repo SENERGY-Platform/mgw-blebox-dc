@@ -26,7 +26,6 @@ class Device(mgw_dc.dm.Device):
     def __init__(self, id: str, name: str, ip_address: str):
         super().__init__(id, name, conf.Senergy.dt_air_sensor)
         self.ip_address = ip_address
-        self.readings = None
 
     def __iter__(self):
         items = (
