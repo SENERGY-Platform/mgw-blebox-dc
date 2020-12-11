@@ -48,11 +48,8 @@ class Conf:
     @simple_env_var.section
     class Discovery:
         remote_host = None
-        device_query_delay = 10
         device_id_prefix = None
         delay = 30
-        check_delay = 60
-        check_fail_safe = 2
         timeout = 5
 
     @simple_env_var.section
