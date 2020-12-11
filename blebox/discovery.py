@@ -85,3 +85,45 @@ def discover_hosts() -> list:
         for worker in workers:
             worker.join()
     return alive_hosts
+
+
+def validate_hosts_worker(hosts, valid_hosts):
+    for host in hosts:
+        try:
+            response = requests.get(url="http://{}/{}".format(host, conf.Api.air_sensor_device), timeout=conf.Discovery.timeout)
+            if response.status_code == 200 and 'blebox' in response.headers.get('Server'):
+                host_info = response.json()
+                if "device" in host_info.keys():
+                    host_info = host_info.get("device")
+                valid_hosts[host_info.get('id')] = {
+                    "name": host_info.get("deviceName"),
+                    "type": host_info.get("type"),
+                    "ip_address": host
+                }
+        except Exception:
+            pass
+
+
+def validate_hosts(hosts) -> dict:
+    valid_hosts = dict()
+    workers = list()
+    bin = 0
+    bin_size = 2
+    if len(hosts) <= bin_size:
+        worker = threading.Thread(target=validate_hosts_worker, name='validateHostsWorker', args=(hosts, valid_hosts))
+        workers.append(worker)
+        worker.start()
+    else:
+        for i in range(int(len(hosts) / bin_size)):
+            worker = threading.Thread(target=validate_hosts_worker, name='validateHostsWorker', args=(hosts[bin:bin + bin_size], valid_hosts))
+            workers.append(worker)
+            worker.start()
+            bin = bin + bin_size
+        if hosts[bin:]:
+            worker = threading.Thread(target=validate_hosts_worker, name='validateHostsWorker', args=(hosts[bin:], valid_hosts))
+            workers.append(worker)
+            worker.start()
+    for worker in workers:
+        worker.join()
+    return valid_hosts
+
