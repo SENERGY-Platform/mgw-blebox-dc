@@ -169,10 +169,6 @@ class Discovery(threading.Thread):
                 payload=json.dumps(mgw_dc.dm.gen_delete_device_msg(device)),
                 qos=1
             )
-            try:
-                self.__mqtt_client.unsubscribe(topic=mgw_dc.com.gen_command_topic(device.id))
-            except Exception as ex:
-                logger.warning("can't unsubscribe '{}' - {}".format(device.id, ex))
             del self.__device_pool[device.id]
         except Exception as ex:
             logger.error("can't remove '{}' - {}".format(device_id, ex))
