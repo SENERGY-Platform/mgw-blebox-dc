@@ -150,8 +150,7 @@ class Discovery(threading.Thread):
             if self.__refresh_flag:
                 self.__refresh_devices()
             discovered_devices = validate_hosts(discover_hosts())
-            if discovered_devices:
-                self.__evaluate(discovered_devices)
+            self.__evaluate(discovered_devices)
 
     def __diff(self, known: dict, unknown: dict):
         known_set = set(known)
