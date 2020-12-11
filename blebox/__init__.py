@@ -18,10 +18,12 @@
 from .device import *
 from .service import *
 from .discovery import *
+from .monitor import *
 
 
 __all__ = (
     device.__all__,
     service.__all__,
-    discovery.__all__
+    discovery.__all__,
+    monitor.__all__
 )
