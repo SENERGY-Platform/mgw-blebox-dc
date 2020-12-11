@@ -20,7 +20,6 @@ __all__ = ("Discovery", )
 
 from util import getLogger, conf, MQTTClient
 from .device import Device
-import urllib3
 import urllib.parse
 import threading
 import subprocess
@@ -33,8 +32,6 @@ import mgw_dc
 
 
 logger = getLogger(__name__.split(".", 1)[-1])
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def ping(host) -> bool:
