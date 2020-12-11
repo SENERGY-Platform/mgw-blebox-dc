@@ -23,12 +23,8 @@ import mgw_dc
 
 
 class Device(mgw_dc.dm.Device):
-    __type_map = {
-        "airSensor": conf.Senergy.dt_air_sensor
-    }
-
-    def __init__(self, id: str, name: str, type: str, ip_address: str):
-        super().__init__(id, name, Device.__type_map[type])
+    def __init__(self, id: str, name: str, ip_address: str):
+        super().__init__(id, name, conf.Senergy.dt_air_sensor)
         self.ip_address = ip_address
 
     def __iter__(self):
