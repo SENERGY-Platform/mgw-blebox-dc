@@ -19,6 +19,7 @@ __all__ = ('discover_hosts', )
 
 
 from util import getLogger, conf, MQTTClient
+from .device import Device
 import urllib3
 import urllib.parse
 import threading
@@ -26,6 +27,8 @@ import subprocess
 import socket
 import requests
 import time
+import mgw_dc
+import json
 
 
 logger = getLogger(__name__.split(".", 1)[-1])
