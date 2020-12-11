@@ -16,6 +16,7 @@
 
 
 from util import initLogger, conf, MQTTClient, handle_sigterm, delay_start
+from blebox import Discovery
 import signal
 
 
@@ -28,7 +29,10 @@ if __name__ == '__main__':
     try:
         device_pool = dict()
         mqtt_client = MQTTClient()
-
+        discovery = Discovery(device_pool=device_pool, mqtt_client=mqtt_client)
+        mqtt_client.on_connect = discovery.schedule_refresh
+        mqtt_client.on_message = discovery.schedule_refresh
+        discovery.start()
         mqtt_client.start()
     finally:
         pass
