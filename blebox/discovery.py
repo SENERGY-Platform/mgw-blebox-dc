@@ -97,15 +97,10 @@ def validate_hosts_worker(hosts, valid_hosts):
                 resp = resp.json()
                 if "device" in resp.keys():
                     resp = resp.get("device")
-                valid_hosts[resp.get('id')] = (
-                    {
-                        "name": resp.get("deviceName"),
-                        "ip_address": host
-                    },
-                    {
-                        "type": resp.get("type"),
-                    }
-                )
+                valid_hosts[resp.get('id')] = {
+                    "name": resp.get("deviceName"),
+                    "ip_address": host
+                }
         except Exception:
             pass
 
@@ -157,7 +152,7 @@ class Discovery(threading.Thread):
         unknown_set = set(unknown)
         missing = known_set - unknown_set
         new = unknown_set - known_set
-        changed = {key for key in known_set & unknown_set if dict(known[key][0]) != unknown[key][0]}
+        changed = {key for key in known_set & unknown_set if dict(known[key][0]) != unknown[key]}
         return missing, new, changed
 
     def __handle_missing_device(self, device_id: str):
@@ -175,7 +170,7 @@ class Discovery(threading.Thread):
 
     def __handle_new_device(self, device_id: str, data: dict):
         try:
-            device = Device(id=device_id, type=data[1]["type"], **data[0])
+            device = Device(id=device_id, **data)
             device.state = mgw_dc.dm.device_state.online
             logger.info("found '{}' with id '{}'".format(device.name, device_id))
             self.__mqtt_client.publish(
@@ -218,7 +213,7 @@ class Discovery(threading.Thread):
                     self.__handle_new_device(device_id, queried_devices[device_id])
             if changed_devices:
                 for device_id in changed_devices:
-                    self.__handle_changed_device(device_id, queried_devices[device_id][0])
+                    self.__handle_changed_device(device_id, queried_devices[device_id])
         except Exception as ex:
             logger.error("can't evaluate devices - {}".format(ex))
 
