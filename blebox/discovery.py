@@ -176,6 +176,7 @@ class Discovery(threading.Thread):
     def __handle_new_device(self, device_id: str, data: dict):
         try:
             device = Device(id=device_id, type=data[1]["type"], **data[0])
+            device.state = mgw_dc.dm.device_state.online
             logger.info("found '{}' with id '{}'".format(device.name, device_id))
             self.__mqtt_client.publish(
                 topic=mgw_dc.dm.gen_device_topic(conf.Client.id),
