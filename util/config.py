@@ -43,6 +43,7 @@ class Conf:
     class Api:
         air_sensor_state = None
         air_sensor_device = None
+        delay = 300
 
     @simple_env_var.section
     class Discovery:
