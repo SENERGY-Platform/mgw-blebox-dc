@@ -138,17 +138,18 @@ class Discovery(threading.Thread):
         super().__init__(name="discovery", daemon=True)
         self.__device_pool = device_pool
         self.__mqtt_client = mqtt_client
-        self.__refresh_flag = 0
+        self.__refresh_flag = False
         self.__lock = threading.Lock()
 
     def run(self):
         logger.info("starting '{}' ...".format(self.name))
         while True:
-            if self.__refresh_flag:
-                self.__refresh_devices(self.__refresh_flag)
-            discovered = validate_hosts(discover_hosts())
-            self.__evaluate(discovered)
             time.sleep(conf.Discovery.delay)
+            if self.__refresh_flag:
+                self.__refresh_devices()
+            discovered_devices = validate_hosts(discover_hosts())
+            if discovered_devices:
+                self.__evaluate(discovered_devices)
 
     def __diff(self, known: dict, unknown: dict):
         known_set = set(known)
@@ -184,7 +185,6 @@ class Discovery(threading.Thread):
                 payload=json.dumps(mgw_dc.dm.gen_set_device_msg(device)),
                 qos=1
             )
-            self.__mqtt_client.subscribe(topic=mgw_dc.com.gen_command_topic(device_id), qos=1)
             self.__device_pool[device.id] = device
         except Exception as ex:
             logger.error("can't add '{}' - {}".format(device_id, ex))
@@ -223,10 +223,9 @@ class Discovery(threading.Thread):
         except Exception as ex:
             logger.error("can't evaluate devices - {}".format(ex))
 
-    def __refresh_devices(self, flag: int):
+    def __refresh_devices(self):
         with self.__lock:
-            if self.__refresh_flag == flag:
-                self.__refresh_flag = 0
+            self.__refresh_flag = False
         for device in self.__device_pool.values():
             try:
                 self.__mqtt_client.publish(
@@ -236,12 +235,7 @@ class Discovery(threading.Thread):
                 )
             except Exception as ex:
                 logger.error("setting device '{}' failed - {}".format(device.id, ex))
-            if flag > 1:
-                try:
-                    self.__mqtt_client.subscribe(topic=mgw_dc.com.gen_command_topic(device.id), qos=1)
-                except Exception as ex:
-                    logger.error("subscribing device '{}' failed - {}".format(device.id, ex))
 
-    def schedule_refresh(self, subscribe: bool = False):
+    def schedule_refresh(self):
         with self.__lock:
-            self.__refresh_flag = max(self.__refresh_flag, int(subscribe) + 1)
+            self.__refresh_flag = True
