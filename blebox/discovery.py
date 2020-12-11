@@ -99,11 +99,15 @@ def validate_hosts_worker(hosts, valid_hosts):
                 host_info = response.json()
                 if "device" in host_info.keys():
                     host_info = host_info.get("device")
-                valid_hosts[host_info.get('id')] = {
-                    "name": host_info.get("deviceName"),
-                    "type": host_info.get("type"),
-                    "ip_address": host
-                }
+                valid_hosts[host_info.get('id')] = (
+                    {
+                        "name": host_info.get("deviceName"),
+                        "ip_address": host
+                    },
+                    {
+                        "type": host_info.get("type"),
+                    }
+                )
         except Exception:
             pass
 
@@ -178,7 +182,7 @@ class Discovery(threading.Thread):
 
     def __handle_new_device(self, device_id: str, data: dict):
         try:
-            device = Device(id=device_id, **data)
+            device = Device(id=device_id, type=data[1]["type"], **data[0])
             logger.info("found '{}' with id '{}'".format(device.name, device_id))
             self.__mqtt_client.publish(
                 topic=mgw_dc.dm.gen_device_topic(conf.Client.id),
