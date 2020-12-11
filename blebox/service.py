@@ -18,13 +18,10 @@
 __all__ = ("get_readings", )
 
 
-from util import getLogger, conf
+from util import conf
 from .device import Device
 import datetime
 import requests
-
-
-logger = getLogger(__name__.split(".", 1)[-1])
 
 
 def map_readings(data):
@@ -56,5 +53,4 @@ def get_readings(device: Device):
         else:
             raise RuntimeError(resp.status_code)
     except Exception as ex:
-        logger.error("could not get readings from '{}' - {}".format(device.id, ex))
-        raise ex
+        raise RuntimeError("could not get readings from '{}' - {}".format(device.id, ex))
