@@ -164,6 +164,7 @@ class Discovery(threading.Thread):
                 payload=json.dumps(mgw_dc.dm.gen_delete_device_msg(device)),
                 qos=1
             )
+            monitor.stop()
             del self.__device_pool[device.id]
         except Exception as ex:
             logger.error("can't remove '{}' - {}".format(device_id, ex))
@@ -179,6 +180,7 @@ class Discovery(threading.Thread):
                 qos=1
             )
             monitor = Monitor(device=device, mqtt_client=self.__mqtt_client)
+            monitor.start()
             self.__device_pool[device.id] = (device, monitor)
         except Exception as ex:
             logger.error("can't add '{}' - {}".format(device_id, ex))
