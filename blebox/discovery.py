@@ -15,7 +15,7 @@
 """
 
 
-__all__ = ('discover_hosts', )
+__all__ = ("Discovery", )
 
 
 from util import getLogger, conf, MQTTClient
@@ -131,3 +131,117 @@ def validate_hosts(hosts) -> dict:
         worker.join()
     return valid_hosts
 
+
+class Discovery(threading.Thread):
+
+    def __init__(self, device_pool: typing.Dict[str, Device], mqtt_client: MQTTClient):
+        super().__init__(name="discovery", daemon=True)
+        self.__device_pool = device_pool
+        self.__mqtt_client = mqtt_client
+        self.__refresh_flag = 0
+        self.__lock = threading.Lock()
+
+    def run(self):
+        logger.info("starting '{}' ...".format(self.name))
+        while True:
+            if self.__refresh_flag:
+                self.__refresh_devices(self.__refresh_flag)
+            discovered = validate_hosts(discover_hosts())
+            self.__evaluate(discovered)
+            time.sleep(conf.Discovery.delay)
+
+    def __diff(self, known: dict, unknown: dict):
+        known_set = set(known)
+        unknown_set = set(unknown)
+        missing = known_set - unknown_set
+        new = unknown_set - known_set
+        changed = {key for key in known_set & unknown_set if dict(known[key]) != unknown[key][0]}
+        return missing, new, changed
+
+    def __handle_missing_device(self, device_id: str):
+        try:
+            device = self.__device_pool[device_id]
+            logger.info("can't find '{}' with id '{}'".format(device.name, device.id))
+            self.__mqtt_client.publish(
+                topic=mgw_dc.dm.gen_device_topic(conf.Client.id),
+                payload=json.dumps(mgw_dc.dm.gen_delete_device_msg(device)),
+                qos=1
+            )
+            try:
+                self.__mqtt_client.unsubscribe(topic=mgw_dc.com.gen_command_topic(device.id))
+            except Exception as ex:
+                logger.warning("can't unsubscribe '{}' - {}".format(device.id, ex))
+            del self.__device_pool[device.id]
+        except Exception as ex:
+            logger.error("can't remove '{}' - {}".format(device_id, ex))
+
+    def __handle_new_device(self, device_id: str, data: dict):
+        try:
+            device = Device(id=device_id, **data)
+            logger.info("found '{}' with id '{}'".format(device.name, device_id))
+            self.__mqtt_client.publish(
+                topic=mgw_dc.dm.gen_device_topic(conf.Client.id),
+                payload=json.dumps(mgw_dc.dm.gen_set_device_msg(device)),
+                qos=1
+            )
+            self.__mqtt_client.subscribe(topic=mgw_dc.com.gen_command_topic(device_id), qos=1)
+            self.__device_pool[device.id] = device
+        except Exception as ex:
+            logger.error("can't add '{}' - {}".format(device_id, ex))
+
+    def __handle_changed_device(self, device_id: str, data: dict):
+        try:
+            device = self.__device_pool[device_id]
+            backup = dict(device)
+            device.name = data["name"]
+            device.ip_address = data["ip_address"]
+            if backup["name"] != data["name"]:
+                try:
+                    self.__mqtt_client.publish(
+                        topic=mgw_dc.dm.gen_device_topic(conf.Client.id),
+                        payload=json.dumps(mgw_dc.dm.gen_set_device_msg(device)),
+                        qos=1
+                    )
+                except Exception as ex:
+                    device.name = backup["name"]
+                    raise ex
+        except Exception as ex:
+            logger.error("can't update '{}' - {}".format(device_id, ex))
+
+    def __evaluate(self, queried_devices):
+        try:
+            missing_devices, new_devices, changed_devices = self.__diff(self.__device_pool, queried_devices)
+            if missing_devices:
+                for device_id in missing_devices:
+                    self.__handle_missing_device(device_id)
+            if new_devices:
+                for device_id in new_devices:
+                    self.__handle_new_device(device_id, queried_devices[device_id])
+            if changed_devices:
+                for device_id in changed_devices:
+                    self.__handle_changed_device(device_id, queried_devices[device_id][0])
+        except Exception as ex:
+            logger.error("can't evaluate devices - {}".format(ex))
+
+    def __refresh_devices(self, flag: int):
+        with self.__lock:
+            if self.__refresh_flag == flag:
+                self.__refresh_flag = 0
+        for device in self.__device_pool.values():
+            try:
+                self.__mqtt_client.publish(
+                    topic=mgw_dc.dm.gen_device_topic(conf.Client.id),
+                    payload=json.dumps(mgw_dc.dm.gen_set_device_msg(device)),
+                    qos=1
+                )
+            except Exception as ex:
+                logger.error("setting device '{}' failed - {}".format(device.id, ex))
+            if flag > 1:
+                try:
+                    self.__mqtt_client.subscribe(topic=mgw_dc.com.gen_command_topic(device.id), qos=1)
+                except Exception as ex:
+                    logger.error("subscribing device '{}' failed - {}".format(device.id, ex))
+
+    def schedule_refresh(self, subscribe: bool = False):
+        with self.__lock:
+            self.__refresh_flag = max(self.__refresh_flag, int(subscribe) + 1)
