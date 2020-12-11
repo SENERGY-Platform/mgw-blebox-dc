@@ -20,6 +20,7 @@ __all__ = ("Discovery", )
 
 from util import getLogger, conf, MQTTClient
 from .device import Device
+from .monitor import Monitor
 import urllib.parse
 import threading
 import subprocess
@@ -91,18 +92,18 @@ def discover_hosts() -> list:
 def validate_hosts_worker(hosts, valid_hosts):
     for host in hosts:
         try:
-            response = requests.get(url="http://{}/{}".format(host, conf.Api.air_sensor_device), timeout=conf.Discovery.timeout)
-            if response.status_code == 200 and 'blebox' in response.headers.get('Server'):
-                host_info = response.json()
-                if "device" in host_info.keys():
-                    host_info = host_info.get("device")
-                valid_hosts[host_info.get('id')] = (
+            resp = requests.get(url="http://{}/{}".format(host, conf.Api.air_sensor_device), timeout=conf.Discovery.timeout)
+            if resp.status_code == 200 and 'blebox' in resp.headers.get('Server'):
+                resp = resp.json()
+                if "device" in resp.keys():
+                    resp = resp.get("device")
+                valid_hosts[resp.get('id')] = (
                     {
-                        "name": host_info.get("deviceName"),
+                        "name": resp.get("deviceName"),
                         "ip_address": host
                     },
                     {
-                        "type": host_info.get("type"),
+                        "type": resp.get("type"),
                     }
                 )
         except Exception:
@@ -135,10 +136,10 @@ def validate_hosts(hosts) -> dict:
 
 class Discovery(threading.Thread):
 
-    def __init__(self, device_pool: typing.Dict[str, Device], mqtt_client: MQTTClient):
+    def __init__(self, mqtt_client: MQTTClient):
         super().__init__(name="discovery", daemon=True)
-        self.__device_pool = device_pool
         self.__mqtt_client = mqtt_client
+        self.__device_pool: typing.Dict[str, typing.Tuple[Device, Monitor]] = dict()
         self.__refresh_flag = False
         self.__lock = threading.Lock()
 
@@ -157,12 +158,12 @@ class Discovery(threading.Thread):
         unknown_set = set(unknown)
         missing = known_set - unknown_set
         new = unknown_set - known_set
-        changed = {key for key in known_set & unknown_set if dict(known[key]) != unknown[key][0]}
+        changed = {key for key in known_set & unknown_set if dict(known[key][0]) != unknown[key][0]}
         return missing, new, changed
 
     def __handle_missing_device(self, device_id: str):
         try:
-            device = self.__device_pool[device_id]
+            device, monitor = self.__device_pool[device_id]
             logger.info("can't find '{}' with id '{}'".format(device.name, device.id))
             self.__mqtt_client.publish(
                 topic=mgw_dc.dm.gen_device_topic(conf.Client.id),
@@ -182,13 +183,14 @@ class Discovery(threading.Thread):
                 payload=json.dumps(mgw_dc.dm.gen_set_device_msg(device)),
                 qos=1
             )
-            self.__device_pool[device.id] = device
+            monitor = Monitor(device=device, mqtt_client=self.__mqtt_client)
+            self.__device_pool[device.id] = (device, monitor)
         except Exception as ex:
             logger.error("can't add '{}' - {}".format(device_id, ex))
 
     def __handle_changed_device(self, device_id: str, data: dict):
         try:
-            device = self.__device_pool[device_id]
+            device, _ = self.__device_pool[device_id]
             backup = dict(device)
             device.name = data["name"]
             device.ip_address = data["ip_address"]
@@ -223,7 +225,7 @@ class Discovery(threading.Thread):
     def __refresh_devices(self):
         with self.__lock:
             self.__refresh_flag = False
-        for device in self.__device_pool.values():
+        for device, _ in self.__device_pool.values():
             try:
                 self.__mqtt_client.publish(
                     topic=mgw_dc.dm.gen_device_topic(conf.Client.id),
