@@ -27,8 +27,9 @@ import subprocess
 import socket
 import requests
 import time
-import mgw_dc
 import json
+import typing
+import mgw_dc
 
 
 logger = getLogger(__name__.split(".", 1)[-1])
