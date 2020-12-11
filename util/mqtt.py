@@ -46,7 +46,7 @@ class MQTTClient:
         if rc == 0:
             logger.info("connected to '{}'".format(conf.MsgBroker.host))
             self.__client.subscribe(mgw_dc.dm.gen_refresh_topic(), 1)
-            # self.on_connect()
+            self.on_connect()
         else:
             logger.error("could not connect to '{}' - {}".format(conf.MsgBroker.host, paho.mqtt.client.connack_string(rc)))
 
@@ -57,7 +57,7 @@ class MQTTClient:
             logger.warning("disconnected from '{}' unexpectedly".format(conf.MsgBroker.host))
 
     def __on_message(self, client, userdata, message: paho.mqtt.client.MQTTMessage):
-        self.on_message(message.topic, message.payload)
+        self.on_message()
 
     def start(self):
         while True:
