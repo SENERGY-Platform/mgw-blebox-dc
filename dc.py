@@ -27,9 +27,8 @@ if __name__ == '__main__':
         delay_start(conf.StartDelay.min, conf.StartDelay.max)
     initLogger(conf.Logger.level)
     try:
-        device_pool = dict()
         mqtt_client = MQTTClient()
-        discovery = Discovery(device_pool=device_pool, mqtt_client=mqtt_client)
+        discovery = Discovery(mqtt_client=mqtt_client)
         mqtt_client.on_connect = discovery.schedule_refresh
         mqtt_client.on_message = discovery.schedule_refresh
         discovery.start()
