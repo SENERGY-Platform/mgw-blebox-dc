@@ -51,6 +51,7 @@ class Conf:
         device_id_prefix = None
         delay = 120
         timeout = 5
+        ip_file = "/opt/host_ip"
 
     @simple_env_var.section
     class StartDelay:
