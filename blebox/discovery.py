@@ -39,14 +39,15 @@ def ping(host) -> bool:
     return subprocess.call(['ping', '-c', '2', '-t', '2', host], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
 
-def get_local_ip(host) -> str:
+def get_local_ip() -> str:
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect((host, 80))
-        ip_addr = s.getsockname()[0]
-        s.close()
-        logger.debug("local ip address is '{}'".format(ip_addr))
-        return ip_addr
+        with open(conf.Discovery.ip_file, "r") as file:
+            ip_addr = file.readline().strip()
+        if ip_addr:
+            logger.debug("host ip address is '{}'".format(ip_addr))
+            return ip_addr
+        else:
+            raise RuntimeError("file empty")
     except Exception as ex:
         raise Exception("could not get local ip - {}".format(ex))
 
@@ -68,7 +69,7 @@ def discover_hosts_worker(ip_range, alive_hosts):
 
 
 def discover_hosts() -> list:
-    ip_range = get_ip_range(get_local_ip(urllib.parse.urlparse(conf.Discovery.remote_host).netloc or conf.Discovery.remote_host))
+    ip_range = get_ip_range(get_local_ip())
     logger.debug("scanning ip range '{}-255' ...".format(ip_range[0]))
     alive_hosts = list()
     workers = list()
