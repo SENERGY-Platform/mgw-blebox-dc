@@ -144,8 +144,11 @@ class Discovery(threading.Thread):
             time.sleep(conf.Discovery.delay)
             if self.__refresh_flag:
                 self.__refresh_devices()
-            discovered_devices = validate_hosts(discover_hosts())
-            self.__evaluate(discovered_devices)
+            try:
+                discovered_devices = validate_hosts(discover_hosts())
+                self.__evaluate(discovered_devices)
+            except Exception as ex:
+                logger.error("discovery failed - {}".format(ex))
 
     def __diff(self, known: dict, unknown: dict):
         known_set = set(known)
@@ -217,7 +220,7 @@ class Discovery(threading.Thread):
                 for device_id in changed_devices:
                     self.__handle_changed_device(device_id, queried_devices[device_id])
         except Exception as ex:
-            logger.error("can't evaluate devices - {}".format(ex))
+            raise RuntimeError("can't evaluate devices - {}".format(ex))
 
     def __refresh_devices(self):
         with self.__lock:
