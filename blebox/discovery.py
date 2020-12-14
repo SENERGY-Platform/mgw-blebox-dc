@@ -96,9 +96,9 @@ def validate_hosts_worker(hosts, valid_hosts):
             if resp.status_code == 200 and 'blebox' in resp.headers.get('Server'):
                 resp = resp.json()
                 if "device" in resp.keys():
-                    resp = resp.get("device")
-                valid_hosts[resp.get('id')] = {
-                    "name": resp.get("deviceName"),
+                    resp = resp["device"]
+                valid_hosts["{}{}".format(conf.Discovery.device_id_prefix, resp['id'])] = {
+                    "name": resp["deviceName"],
                     "ip_address": host
                 }
         except Exception:
