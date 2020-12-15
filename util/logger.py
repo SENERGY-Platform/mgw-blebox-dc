@@ -14,7 +14,7 @@
    limitations under the License.
 """
 
-__all__ = ("getLogger", "initLogger")
+__all__ = ("get_logger", "init_logger")
 
 
 import logging
@@ -45,12 +45,12 @@ logger.propagate = False
 logger.addHandler(handler)
 
 
-def initLogger(level):
+def init_logger(level):
     if level not in logging_levels.keys():
         err = "unknown log level '{}'".format(level)
         raise LoggerError(err)
     logger.setLevel(logging_levels[level])
 
 
-def getLogger(name: str) -> logging.Logger:
+def get_logger(name: str) -> logging.Logger:
     return logger.getChild(name)

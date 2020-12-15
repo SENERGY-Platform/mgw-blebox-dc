@@ -18,7 +18,7 @@
 __all__ = ("Monitor", )
 
 
-from util import getLogger, conf, MQTTClient
+from util import get_logger, conf, MQTTClient
 from .device import Device
 from .service import get_readings
 import threading
@@ -27,7 +27,7 @@ import json
 import mgw_dc
 
 
-logger = getLogger(__name__.split(".", 1)[-1])
+logger = get_logger(__name__.split(".", 1)[-1])
 
 
 class Monitor(threading.Thread):

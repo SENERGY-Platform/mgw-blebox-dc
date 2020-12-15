@@ -18,7 +18,7 @@
 __all__ = ("Discovery", )
 
 
-from util import getLogger, conf, MQTTClient
+from util import get_logger, conf, MQTTClient
 from .device import Device
 from .monitor import Monitor
 import urllib.parse
@@ -32,7 +32,7 @@ import typing
 import mgw_dc
 
 
-logger = getLogger(__name__.split(".", 1)[-1])
+logger = get_logger(__name__.split(".", 1)[-1])
 
 
 def ping(host) -> bool:
