@@ -21,10 +21,8 @@ __all__ = ("Discovery", )
 from util import get_logger, conf, MQTTClient
 from .device import Device
 from .monitor import Monitor
-import urllib.parse
 import threading
 import subprocess
-import socket
 import requests
 import time
 import json
