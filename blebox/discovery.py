@@ -138,9 +138,10 @@ class Discovery(threading.Thread):
         self.__lock = threading.Lock()
 
     def run(self):
+        while not self.__mqtt_client.connected():
+            time.sleep(2)
         logger.info("starting '{}' ...".format(self.name))
         while True:
-            time.sleep(conf.Discovery.delay)
             if self.__refresh_flag:
                 self.__refresh_devices()
             try:
@@ -148,6 +149,7 @@ class Discovery(threading.Thread):
                 self.__evaluate(discovered_devices)
             except Exception as ex:
                 logger.error("discovery failed - {}".format(ex))
+            time.sleep(conf.Discovery.delay)
 
     def __diff(self, known: dict, unknown: dict):
         known_set = set(known)
