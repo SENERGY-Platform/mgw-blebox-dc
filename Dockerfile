@@ -4,7 +4,7 @@ FROM python:3-slim-buster
 LABEL org.opencontainers.image.source https://github.com/SENERGY-Platform/mgw-blebox-dc
 
 #RUN apk --no-cache add git
-RUN apt-get update && apt-get install -y git
+RUN apt-get update && apt-get install -y git iputils-ping
 
 WORKDIR /usr/src/app
 
