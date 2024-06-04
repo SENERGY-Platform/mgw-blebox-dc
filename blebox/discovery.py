@@ -88,7 +88,9 @@ def discover_hosts() -> list:
 def validate_hosts_worker(hosts, valid_hosts):
     for host in hosts:
         try:
-            resp = requests.get(url="http://{}/{}".format(host, conf.Api.air_sensor_device), timeout=conf.Discovery.timeout)
+            resp = requests.get(url="http://{}/{}".format(host, conf.Api.air_sensor_info), timeout=conf.Discovery.timeout)
+            if resp.status_code != 200:
+                resp = requests.get(url="http://{}/{}".format(host, conf.Api.air_sensor_device), timeout=conf.Discovery.timeout)
             if resp.status_code == 200 and 'blebox' in resp.headers.get('Server'):
                 resp = resp.json()
                 if "device" in resp.keys():

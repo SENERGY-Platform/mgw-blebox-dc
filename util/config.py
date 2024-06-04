@@ -42,6 +42,7 @@ class Conf:
     @simple_env_var.section
     class Api:
         air_sensor_state = "api/air/state"
+        air_sensor_info = "info"
         air_sensor_device = "api/device/state"
         delay = 60
 
