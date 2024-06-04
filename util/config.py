@@ -17,6 +17,7 @@
 __all__ = ("conf",)
 
 
+import os
 import simple_env_var
 
 
@@ -37,7 +38,7 @@ class Conf:
     class Client:
         clean_session = False
         keep_alive = 10
-        id = "blebox-dc"
+        id = "blebox-dc-" + os.getenv("MGW_DID")
 
     @simple_env_var.section
     class Api:
