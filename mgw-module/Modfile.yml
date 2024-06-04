@@ -1,0 +1,60 @@
+modfileVersion: "v1"
+id: github.com/SENERGY-Platform/mgw-blebox-dc/mgw-module
+name: Blebox airSensor Connector
+description: Connect local Blebox airSensor units with the gateway.
+license: Apache-2.0 license
+author: InfAI (CC SES)
+version: v0.1.0
+type: device-connector
+deploymentType: single
+dependencies:
+  github.com/SENERGY-Platform/mgw-mqtt-broker:
+    version: "<v2.0.0"
+    requiredServices:
+      broker:
+        - refVar: CONF_MSGBROKER_HOST
+          services:
+            - connector
+services:
+  connector:
+    name: airSensor Connector
+    image: ghcr.io/senergy-platform/blebox-dc:0.1.0
+configs:
+  broker-port:
+    dataType: int
+    value: 1881
+    targets:
+      - refVar: CONF_MSGBROKER_PORT
+        services:
+          - connector
+  dt-air-sensor:
+    value: urn:infai:ses:device-type:a8cbd322-9d8c-4f4c-afec-ae4b7986b6ed
+    targets:
+      - refVar: CONF_SENERGY_DT_AIR_SENSOR
+        services:
+          - connector
+  device-id-prefix:
+    targets:
+      - refVar: CONF_DISCOVERY_DEVICE_ID_PREFIX
+        services:
+          - connector
+    userInput:
+      type: text
+      name: Device ID Prefix
+    optional: true
+  log-level:
+    value: warning
+    options:
+      - info
+      - warning
+      - error
+      - critical
+      - debug
+    targets:
+      - refVar: CONF_LOGGER_LEVEL
+        services:
+          - connector
+    userInput:
+      type: text
+      name: Log level
+    optional: true
