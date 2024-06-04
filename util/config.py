@@ -50,7 +50,7 @@ class Conf:
         device_id_prefix = None
         delay = 120
         timeout = 5
-        ip_file = "/opt/host_ip"
+        host_network_url = "http://core-api/host-info/network"
 
     @simple_env_var.section
     class StartDelay:
@@ -67,4 +67,4 @@ conf = Conf()
 
 
 if not conf.Senergy.dt_air_sensor:
-    exit('Please provide a SENERGY device types')
+    exit('Please provide a SENERGY device type')
