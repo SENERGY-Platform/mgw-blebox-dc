@@ -28,6 +28,7 @@ import time
 import json
 import typing
 import mgw_dc
+import ipaddress
 
 
 logger = get_logger(__name__.split(".", 1)[-1])
@@ -37,27 +38,22 @@ def ping(host) -> bool:
     return subprocess.call(['ping', '-c', '2', '-t', '2', host], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
 
-def get_local_ip() -> str:
+def get_local_networks() -> typing.List[str]:
     try:
-        with open(conf.Discovery.ip_file, "r") as file:
-            ip_addr = file.readline().strip()
-        if ip_addr:
-            logger.debug("host ip address is '{}'".format(ip_addr))
-            return ip_addr
-        else:
-            raise RuntimeError("file empty")
+        resp = requests.get(url=conf.Discovery.host_network_url, timeout=conf.Discovery.timeout)
+        if resp.status_code != 200:
+            raise RuntimeError("{} {}".format(resp.status_code, resp.text))
+        resp = resp.json()
+        networks = list()
+        for network in resp["interfaces"]:
+            networks.append(network["ipv4_net"])
+        return networks
     except Exception as ex:
-        raise Exception("could not get local ip - {}".format(ex))
+        raise Exception("could not get local networks - {}".format(ex))
 
 
-def get_ip_range(local_ip) -> list:
-    split_ip = local_ip.rsplit('.', 1)
-    base_ip = split_ip[0] + '.'
-    if len(split_ip) > 1:
-        ip_range = [str(base_ip) + str(i) for i in range(1, 256)]
-        ip_range.remove(local_ip)
-        return ip_range
-    return list()
+def get_ip_range(network) -> list:
+    return [str(ip) for ip in ipaddress.IPv4Network(network)]
 
 
 def discover_hosts_worker(ip_range, alive_hosts):
@@ -67,24 +63,25 @@ def discover_hosts_worker(ip_range, alive_hosts):
 
 
 def discover_hosts() -> list:
-    ip_range = get_ip_range(get_local_ip())
-    logger.debug("scanning ip range '{}-255' ...".format(ip_range[0]))
     alive_hosts = list()
-    workers = list()
-    bin = 0
-    bin_size = 3
-    if ip_range:
-        for i in range(int(len(ip_range) / bin_size)):
-            worker = threading.Thread(target=discover_hosts_worker, name='discoverHostsWorker', args=(ip_range[bin:bin + bin_size], alive_hosts))
-            workers.append(worker)
-            worker.start()
-            bin = bin + bin_size
-        if ip_range[bin:]:
-            worker = threading.Thread(target=discover_hosts_worker, name='discoverHostsWorker', args=(ip_range[bin:], alive_hosts))
-            workers.append(worker)
-            worker.start()
-        for worker in workers:
-            worker.join()
+    for network in get_local_networks():
+        ip_range = get_ip_range(network)
+        logger.debug("scanning network '{}' with '{}' potential hosts ...".format(network, len(ip_range)))
+        workers = list()
+        bin = 0
+        bin_size = 3
+        if ip_range:
+            for i in range(int(len(ip_range) / bin_size)):
+                worker = threading.Thread(target=discover_hosts_worker, name='discoverHostsWorker', args=(ip_range[bin:bin + bin_size], alive_hosts))
+                workers.append(worker)
+                worker.start()
+                bin = bin + bin_size
+            if ip_range[bin:]:
+                worker = threading.Thread(target=discover_hosts_worker, name='discoverHostsWorker', args=(ip_range[bin:], alive_hosts))
+                workers.append(worker)
+                worker.start()
+            for worker in workers:
+                worker.join()
     return alive_hosts
 
 
