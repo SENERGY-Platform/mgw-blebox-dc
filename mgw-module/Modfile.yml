@@ -4,7 +4,7 @@ name: Blebox airSensor Connector
 description: Connect local Blebox airSensor units with the gateway.
 license: Apache-2.0 license
 author: InfAI (CC SES)
-version: v0.1.1
+version: v0.1.2
 type: device-connector
 deploymentType: single
 dependencies:
