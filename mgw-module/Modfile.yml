@@ -18,7 +18,7 @@ dependencies:
 services:
   connector:
     name: airSensor Connector
-    image: ghcr.io/senergy-platform/blebox-dc:0.1.0
+    image: ghcr.io/senergy-platform/blebox-dc:0.1.2
 configs:
   broker-port:
     dataType: int
