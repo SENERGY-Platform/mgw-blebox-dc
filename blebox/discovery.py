@@ -64,8 +64,8 @@ def discover_hosts_worker(ip_range, alive_hosts):
 
 def discover_hosts() -> list:
     alive_hosts = list()
-    if isinstance(conf.Discovery.host_networks, str) and conf.Discovery.host_networks != "":
-        networks = conf.Discovery.host_networks.split(",")
+    if isinstance(conf.Discovery.networks, str) and conf.Discovery.networks != "":
+        networks = conf.Discovery.networks.split(",")
     else:
         networks = get_local_networks()
     for network in networks:
