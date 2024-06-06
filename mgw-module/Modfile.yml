@@ -33,6 +33,17 @@ configs:
       - refVar: CONF_SENERGY_DT_AIR_SENSOR
         services:
           - connector
+  networks:
+    targets:
+      - refVar: CONF_DISCOVERY_NETWORKS
+        services:
+          - connector
+    isList: true
+    userInput:
+      type: text
+      name: Networks
+      description: List of networks in CIDR notation.
+    optional: true
   device-id-prefix:
     targets:
       - refVar: CONF_DISCOVERY_DEVICE_ID_PREFIX

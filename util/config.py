@@ -53,6 +53,7 @@ class Conf:
         delay = 120
         timeout = 5
         host_network_url = "http://core-api/host-info/network"
+        networks = None
 
     @simple_env_var.section
     class StartDelay:
