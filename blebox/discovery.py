@@ -99,7 +99,10 @@ def validate_hosts_worker(hosts, valid_hosts):
                 resp = resp.json()
                 if "device" in resp.keys():
                     resp = resp["device"]
-                valid_hosts["{}{}".format(conf.Discovery.device_id_prefix, resp['id'])] = {
+                prefix = ""
+                if conf.Discovery.device_id_prefix is not None:
+                    prefix = conf.Discovery.device_id_prefix
+                valid_hosts["{}{}".format(prefix, resp['id'])] = {
                     "name": resp["deviceName"],
                     "ip_address": host
                 }
