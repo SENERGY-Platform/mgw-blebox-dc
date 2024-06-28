@@ -4,7 +4,7 @@ name: Blebox airSensor Connector
 description: Connect local Blebox airSensor units with the gateway.
 license: Apache-2.0 license
 author: InfAI (CC SES)
-version: v0.2.2
+version: v0.2.3
 type: device-connector
 deploymentType: single
 dependencies:
@@ -20,6 +20,18 @@ services:
     name: airSensor Connector
     image: ghcr.io/senergy-platform/blebox-dc:0.2.2
 configs:
+  readings-interval:
+    dataType: int
+    value: 30
+    targets:
+      - refVar: CONF_API_DELAY
+        services:
+          - connector
+    userInput:
+      type: number
+      name: Readings interval
+      description: Interval at which measurements are queried.
+    optional: true
   broker-port:
     dataType: int
     value: 1881
