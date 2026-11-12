@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
+  # A manual run on a branch builds both platforms as a check and publishes nothing;
+  # only a version tag publishes :latest and :<tag>.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,7 +21,7 @@ jobs:
       id-token: write # signs the provenance attestation
     with:
       output: image
-      push: true
+      push: ${{ github.ref_type == 'tag' }}
       platforms: linux/amd64,linux/arm64
       meta-images: |
         ghcr.io/senergy-platform/blebox-dc
